@@ -1,0 +1,4 @@
+geometry:
+  allow_invalid: false
+  allow_empty: false
+  allow_duplicates: false

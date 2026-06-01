@@ -1,0 +1,7 @@
+{
+"type": "FeatureCollection",
+"name": "missing_crs",
+"features": [
+{ "type": "Feature", "properties": { "id": 1 }, "geometry": { "type": "Point", "coordinates": [ 0.0, 0.0 ] } }
+]
+}

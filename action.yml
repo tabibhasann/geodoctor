@@ -1,0 +1,25 @@
+name: geodoctor GitHub Action
+description: Lint geospatial vector datasets in CI
+author: Tabib Hasan
+
+inputs:
+  path:
+    description: "Glob pattern for input files"
+    required: true
+  config:
+    description: "Path to geodoctor.yml"
+    required: false
+    default: "geodoctor.yml"
+  strict:
+    description: "Promote warnings to errors"
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@v3
+    - run: uv pip install --system geodoctor
+      shell: bash
+    - run: geodoctor check ${{ inputs.path }} --config ${{ inputs.config }} ${{ inputs.strict == 'true' && '--strict' || '' }}
+      shell: bash
