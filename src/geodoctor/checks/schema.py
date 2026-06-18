@@ -33,15 +33,7 @@ def check_wrong_field_type(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> li
             continue
         dtype = str(gdf[field].dtype)
         expected_kind = type_map.get(spec.type, "object")
-        if expected_kind == "integer" and "int" not in dtype:
-            issues.append(
-                Issue(
-                    rule_id="wrong_field_type",
-                    severity="warning",
-                    message=f"Field '{field}' is {dtype}, expected {spec.type}",
-                )
-            )
-        elif expected_kind == "floating" and "float" not in dtype:
+        if expected_kind == "integer" and "int" not in dtype or expected_kind == "floating" and "float" not in dtype:
             issues.append(
                 Issue(
                     rule_id="wrong_field_type",
@@ -122,7 +114,9 @@ def check_value_not_allowed(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> l
     return issues
 
 
-@register_check("non_unique_values", severity="warning", description="Field expected to have unique values has duplicates")
+@register_check(
+    "non_unique_values", severity="warning", description="Field expected to have unique values has duplicates"
+)
 def check_non_unique_values(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> list[Issue]:
     issues = []
     for field, spec in config.schema_config.fields.items():
@@ -148,9 +142,13 @@ def check_regex_mismatch(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> list
         if not spec.regex or field not in gdf.columns:
             continue
         pattern = re.compile(spec.regex)
-        bad = gdf.index[gdf[field].apply(
-            lambda v: not pattern.match(str(v)) if v is not None and not isinstance(v, float) else False
-        )].tolist()
+        bad = gdf.index[
+            gdf[field].apply(
+                lambda v, p=pattern: not p.match(str(v))
+                if v is not None and not isinstance(v, float)
+                else False
+            )
+        ].tolist()
         if bad:
             issues.append(
                 Issue(
@@ -169,9 +167,7 @@ def check_whitespace_in_string(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -
     for col in gdf.select_dtypes(include=["object"]).columns:
         if col == "geometry":
             continue
-        bad = gdf.index[gdf[col].apply(
-            lambda v: isinstance(v, str) and v != v.strip()
-        )].tolist()
+        bad = gdf.index[gdf[col].apply(lambda v: isinstance(v, str) and v != v.strip())].tolist()
         if bad:
             issues.append(
                 Issue(

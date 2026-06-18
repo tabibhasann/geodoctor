@@ -1,6 +1,9 @@
-name: geodoctor GitHub Action
+name: geodoctor
 description: Lint geospatial vector datasets in CI
 author: Tabib Hasan
+branding:
+  icon: map
+  color: blue
 
 inputs:
   path:
@@ -14,12 +17,48 @@ inputs:
     description: "Promote warnings to errors"
     required: false
     default: "false"
+  format:
+    description: "Output format (text, json, html)"
+    required: false
+    default: "text"
+  fail-on-warning:
+    description: "Alias for strict (kept for back-compat)"
+    required: false
+    default: "false"
+  python-version:
+    description: "Python version to use"
+    required: false
+    default: "3.12"
 
 runs:
   using: composite
   steps:
-    - uses: astral-sh/setup-uv@v3
-    - run: uv pip install --system geodoctor
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install geodoctor
       shell: bash
-    - run: geodoctor check ${{ inputs.path }} --config ${{ inputs.config }} ${{ inputs.strict == 'true' && '--strict' || '' }}
+      run: pip install --quiet geodoctor
+
+    - name: Run geodoctor check
+      id: check
       shell: bash
+      run: |
+        set -e
+        # Build args array safely
+        ARGS=(check "${{ inputs.path }}" --config "${{ inputs.config }}")
+        if [ "${{ inputs.strict }}" = "true" ] || [ "${{ inputs.fail-on-warning }}" = "true" ]; then
+          ARGS+=(--strict)
+        fi
+        if [ "${{ inputs.format }}" != "text" ]; then
+          ARGS+=(--format "${{ inputs.format }}")
+        fi
+        geodoctor "${ARGS[@]}"
+
+    - name: Fail on errors
+      if: ${{ failure() && steps.check.conclusion == 'failure' }}
+      shell: bash
+      run: |
+        echo "::error::geodoctor found errors. See the run log for details."
+        exit 1

@@ -1,15 +1,14 @@
 """Tests for schema checks."""
 
 import geopandas as gpd
-import pytest
 
-from geodoctor.config import FieldSpec, GeodoctorConfig, SchemaConfig
 from geodoctor.checks.schema import (
     check_missing_required_field,
+    check_non_unique_values,
     check_null_in_non_nullable,
     check_value_not_allowed,
-    check_non_unique_values,
 )
+from geodoctor.config import FieldSpec, GeodoctorConfig, SchemaConfig
 
 
 class TestMissingRequiredField:
@@ -19,17 +18,13 @@ class TestMissingRequiredField:
             geometry=gpd.points_from_xy([0], [0]),
             crs="EPSG:4326",
         )
-        config = GeodoctorConfig(
-            schema_config=SchemaConfig(fields={"name": FieldSpec(required=True)})
-        )
+        config = GeodoctorConfig(schema_config=SchemaConfig(fields={"name": FieldSpec(required=True)}))
         issues = check_missing_required_field(gdf, config)
         assert len(issues) == 0
 
     def test_field_missing(self):
         gdf = gpd.GeoDataFrame(geometry=gpd.points_from_xy([0], [0]), crs="EPSG:4326")
-        config = GeodoctorConfig(
-            schema_config=SchemaConfig(fields={"name": FieldSpec(required=True)})
-        )
+        config = GeodoctorConfig(schema_config=SchemaConfig(fields={"name": FieldSpec(required=True)}))
         issues = check_missing_required_field(gdf, config)
         assert len(issues) > 0
         assert issues[0].rule_id == "missing_required_field"
@@ -42,9 +37,7 @@ class TestNullInNonNullable:
             geometry=gpd.points_from_xy([0, 1], [0, 1]),
             crs="EPSG:4326",
         )
-        config = GeodoctorConfig(
-            schema_config=SchemaConfig(fields={"name": FieldSpec(nullable=False)})
-        )
+        config = GeodoctorConfig(schema_config=SchemaConfig(fields={"name": FieldSpec(nullable=False)}))
         issues = check_null_in_non_nullable(gdf, config)
         assert len(issues) > 0
         assert issues[0].rule_id == "null_in_non_nullable"
@@ -58,9 +51,7 @@ class TestValueNotAllowed:
             crs="EPSG:4326",
         )
         config = GeodoctorConfig(
-            schema_config=SchemaConfig(
-                fields={"category": FieldSpec(allowed=["residential", "commercial"])}
-            )
+            schema_config=SchemaConfig(fields={"category": FieldSpec(allowed=["residential", "commercial"])})
         )
         issues = check_value_not_allowed(gdf, config)
         assert len(issues) > 0
@@ -74,8 +65,6 @@ class TestNonUniqueValues:
             geometry=gpd.points_from_xy([0, 1, 2], [0, 1, 2]),
             crs="EPSG:4326",
         )
-        config = GeodoctorConfig(
-            schema_config=SchemaConfig(fields={"id": FieldSpec(unique=True)})
-        )
+        config = GeodoctorConfig(schema_config=SchemaConfig(fields={"id": FieldSpec(unique=True)}))
         issues = check_non_unique_values(gdf, config)
         assert len(issues) > 0

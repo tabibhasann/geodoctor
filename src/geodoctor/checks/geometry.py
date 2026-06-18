@@ -159,6 +159,10 @@ def check_sliver_polygon(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> list
     if min_area <= 0:
         return []
 
+    geom_types = gdf.geometry.geom_type.dropna().unique()
+    if not any(gt in ("Polygon", "MultiPolygon") for gt in geom_types):
+        return []
+
     areas = _geodesic_area(gdf)
     slivers = gdf[areas < min_area]
     if len(slivers) == 0:
@@ -198,3 +202,122 @@ def check_out_of_bounds(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> list[
             feature_ids=bad,
         )
     ]
+
+
+@register_check(
+    "repeated_vertices",
+    severity="info",
+    description="Geometries with consecutive identical vertices",
+    fix_id="remove_repeated_vertices",
+)
+def check_repeated_vertices(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> list[Issue]:
+    affected: list[int] = []
+    for idx, geom in gdf.geometry.items():
+        if geom is None or geom.is_empty:
+            continue
+        try:
+            coords = list(geom.coords)
+            for i in range(1, len(coords)):
+                if coords[i] == coords[i - 1]:
+                    affected.append(idx)
+                    break
+        except Exception:
+            continue
+    if not affected:
+        return []
+    return [
+        Issue(
+            rule_id="repeated_vertices",
+            severity="info",
+            message=f"{len(affected)} geometries have repeated consecutive vertices",
+            feature_ids=affected,
+            fix_available=True,
+        )
+    ]
+
+
+@register_check(
+    "zero_length_segment",
+    severity="info",
+    description="Line geometries with zero-length segments",
+)
+def check_zero_length_segment(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> list[Issue]:
+    affected: list[int] = []
+    for idx, geom in gdf.geometry.items():
+        if geom is None or geom.is_empty:
+            continue
+        if geom.geom_type not in ("LineString", "MultiLineString"):
+            continue
+        try:
+            for line in geom.geoms if geom.geom_type == "MultiLineString" else [geom]:
+                coords = list(line.coords)
+                for i in range(1, len(coords)):
+                    if coords[i] == coords[i - 1]:
+                        affected.append(idx)
+                        break
+                if idx in affected:
+                    break
+        except Exception:
+            continue
+    if not affected:
+        return []
+    return [
+        Issue(
+            rule_id="zero_length_segment",
+            severity="info",
+            message=f"{len(affected)} line geometries have zero-length segments",
+            feature_ids=affected,
+        )
+    ]
+
+
+@register_check(
+    "ring_orientation",
+    severity="info",
+    description="Polygon exterior rings with unexpected orientation",
+    fix_id="normalize_ring_orientation",
+)
+def check_ring_orientation(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> list[Issue]:
+    expected = config.geometry.expected_ring_orientation
+    if expected is None:
+        return []
+
+    target_sign = 1.0 if expected.lower().startswith("cw") else -1.0
+    affected: list[int] = []
+    for idx, geom in gdf.geometry.items():
+        if geom is None or geom.is_empty:
+            continue
+        polys = list(geom.geoms) if geom.geom_type == "MultiPolygon" else [geom] if geom.geom_type == "Polygon" else []
+        for poly in polys:
+            try:
+                # Signed area: positive = CCW in shapely 2.x
+                _, _, sign = _signed_area_2x(poly.exterior)
+                if sign * target_sign < 0:
+                    affected.append(idx)
+                    break
+            except Exception:
+                continue
+    if not affected:
+        return []
+    return [
+        Issue(
+            rule_id="ring_orientation",
+            severity="info",
+            message=f"{len(affected)} polygons have exterior rings not matching '{expected}'",
+            feature_ids=affected,
+            fix_available=True,
+        )
+    ]
+
+
+def _signed_area_2x(ring) -> tuple[float, float, float]:
+    """Return (abs_area, perim, signed_area) using shapely 2.x signed area."""
+    coords = list(ring.coords)
+    s = 0.0
+    n = len(coords) - 1
+    for i in range(n):
+        x1, y1 = coords[i]
+        x2, y2 = coords[i + 1]
+        s += (x2 - x1) * (y2 + y1)
+    signed = -s / 2.0
+    return abs(signed), abs(s) / 2.0, signed

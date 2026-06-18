@@ -1,20 +1,20 @@
 """CLI entry point — typer-powered command-line interface."""
 
-import sys
 from pathlib import Path
-from typing import Optional
 
 import typer
 
-from . import __version__
-from .checks import crs, geometry, schema, structure
+from . import (
+    __version__,
+    checks,  # noqa: F401  ensure all submodules register their @register_check
+)
 from .config import GeodoctorConfig, load_config
 from .dataset import load_dataset
 from .registry import CHECKS
-from .report import Report
 from .renderers.console import render_console
-from .renderers.console import render_json as _render_json
 from .renderers.console import render_html as _render_html
+from .renderers.console import render_json as _render_json
+from .report import Report
 
 app = typer.Typer(
     name="geodoctor",
@@ -25,49 +25,91 @@ app = typer.Typer(
 
 def _run_checks(dataset_path: str, config: GeodoctorConfig, layer: str | None = None) -> Report:
     """Run all registered checks against a dataset."""
+    from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
+
     report = Report()
 
-    for layer_name, gdf in load_dataset(dataset_path, layer=layer):
-        report.layers_checked += 1
-        report.total_features += len(gdf)
+    layers = list(load_dataset(dataset_path, layer=layer))
+    active_rule_ids = [rid for rid in CHECKS if _is_rule_active(rid, config, CHECKS[rid]["severity"])]
+    total_checks = len(layers) * len(active_rule_ids)
 
-        for rule_id, check_info in CHECKS.items():
-            default_sev = check_info["severity"]
-            severity = config.effective_severity(rule_id, default_sev)
-            try:
-                issues = check_info["fn"](gdf, config)
-                for issue in issues:
-                    # Check if this rule is allowed based on config
-                    if _is_rule_active(rule_id, config, default_sev):
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        transient=True,
+    ) as progress:
+        task = progress.add_task("Running checks...", total=total_checks or 1)
+
+        for layer_name, gdf in layers:
+            report.layers_checked += 1
+            report.total_features += len(gdf)
+
+            for rule_id in active_rule_ids:
+                check_info = CHECKS[rule_id]
+                default_sev = check_info["severity"]
+                severity = config.effective_severity(rule_id, default_sev)
+                try:
+                    issues = check_info["fn"](gdf, config)
+                    for issue in issues:
                         issue.severity = severity
                         issue.layer = layer_name
                         report.issues.append(issue)
-            except Exception as e:
-                from .report import Issue
-                report.issues.append(
-                    Issue(
-                        rule_id=rule_id,
-                        severity=severity,
-                        message=f"Check failed: {e}",
-                        layer=layer_name,
+                except Exception as e:
+                    from .report import Issue
+
+                    report.issues.append(
+                        Issue(
+                            rule_id=rule_id,
+                            severity=severity,
+                            message=f"Check failed: {e}",
+                            layer=layer_name,
+                        )
                     )
-                )
+                finally:
+                    progress.advance(task)
 
     return report
 
 
 def _is_rule_active(rule_id: str, config: GeodoctorConfig, default_sev: str) -> bool:
-    """Check if a rule is active based on config."""
-    # If severity is overridden to a non-error/non-warning, it may still be active
-    return True  # All checks run by default; config controls severity
+    """Check if a rule is active based on config.
+
+    Rules can be disabled via config settings:
+    - Geometry rules: check geometry.allow_* flags
+    - CRS rules: check crs.require flag
+    - Topology rules: active for polygon layers
+    - Schema/structure rules: always active (controlled by field presence)
+    """
+    # Geometry checks - respect allow_* flags
+    if rule_id == "invalid_geometry":
+        return not config.geometry.allow_invalid
+    if rule_id == "empty_geometry":
+        return not config.geometry.allow_empty
+    if rule_id == "null_geometry":
+        return not config.geometry.allow_empty
+    if rule_id == "duplicate_geometry":
+        return not config.geometry.allow_duplicates
+    if rule_id == "mixed_geometry_types":
+        return config.geometry.single_geometry_type
+    if rule_id == "sliver_polygon":
+        return config.geometry.min_area_m2 > 0
+    if rule_id == "out_of_bounds":
+        return config.crs.expected in (None, "EPSG:4326", "4326")
+
+    # CRS checks - respect require flag
+    if rule_id == "missing_crs":
+        return config.crs.require
+
+    # All other rules (schema, structure, topology) are active by default
+    return True
 
 
 @app.command()
 def check(
     path: str = typer.Argument(..., help="Path to the dataset"),
-    config_path: str = typer.Option(
-        None, "--config", "-c", help="Path to geodoctor.yml"
-    ),
+    config_path: str = typer.Option(None, "--config", "-c", help="Path to geodoctor.yml"),
     format: str = typer.Option("text", "--format", "-f", help="Output format: text, json, html"),
     layer: str = typer.Option(None, "--layer", "-l", help="Layer name to check"),
     strict: bool = typer.Option(False, "--strict", help="Promote warnings to errors"),
@@ -81,24 +123,27 @@ def check(
         raise typer.Exit(2)
 
     report = _run_checks(path, config, layer)
-
-    if strict:
-        from .report import Issue
-        report.issues = report.promoted_errors()
+    display_report = report.promoted() if strict else report
 
     if format == "json":
-        output_str = _render_json(report)
+        output_str = _render_json(display_report)
+        if output:
+            Path(output).write_text(output_str)
+        else:
+            typer.echo(output_str)
     elif format == "html":
-        output_str = _render_html(report, output)
+        # render_html writes the file if output is set; otherwise return the string
+        output_str = _render_html(display_report, output)
+        if not output:
+            typer.echo(output_str)
     else:
-        output_str = render_console(report)
+        output_str = render_console(display_report)
+        if output:
+            Path(output).write_text(output_str)
+        else:
+            typer.echo(output_str)
 
-    if output and format != "html":
-        Path(output).write_text(output_str)
-    elif format != "html":
-        typer.echo(output_str)
-
-    if report.has_errors or (strict and report.issues):
+    if display_report.has_errors:
         raise typer.Exit(1)
     raise typer.Exit(0)
 
@@ -107,9 +152,7 @@ def check(
 def fix(
     path: str = typer.Argument(..., help="Path to the dataset"),
     output_path: str = typer.Option(..., "--output", "-o", help="Output file path"),
-    config_path: str = typer.Option(
-        None, "--config", "-c", help="Path to geodoctor.yml"
-    ),
+    config_path: str = typer.Option(None, "--config", "-c", help="Path to geodoctor.yml"),
     fixes: str = typer.Option(
         "make_valid,drop_empty_null",
         "--fixes",
@@ -171,7 +214,7 @@ def init(
     """Generate a starter geodoctor.yml from a dataset."""
     import yaml
 
-    for layer_name, gdf in load_dataset(path):
+    for _layer_name, gdf in load_dataset(path):  # noqa: PERF102  (writes per-layer)
         config = {
             "crs": {
                 "expected": gdf.crs.to_string() if gdf.crs else None,
@@ -193,11 +236,11 @@ def init(
                 continue
             dtype = str(gdf[col].dtype)
             nullable = bool(gdf[col].isna().any())
-            spec = {"type": _dtype_to_str(dtype), "nullable": nullable}
+            spec: dict = {"type": _dtype_to_str(dtype), "nullable": nullable}
             unique_count = gdf[col].nunique()
             if unique_count == len(gdf) and not nullable:
                 spec["unique"] = True
-            config["schema"]["fields"][col] = spec
+            config["schema"]["fields"][col] = spec  # type: ignore[index]
 
         yaml_str = yaml.dump(config, default_flow_style=False, sort_keys=False)
         Path(output).write_text(yaml_str)

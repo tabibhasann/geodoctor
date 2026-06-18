@@ -50,18 +50,23 @@ class Report:
     def has_errors(self) -> bool:
         return any(i.severity == "error" for i in self.issues)
 
-    def promoted_errors(self) -> list[Issue]:
-        """Return issues with warnings promoted to error (strict mode)."""
-        return [
-            Issue(
-                rule_id=i.rule_id,
-                severity="error",
-                message=i.message,
-                layer=i.layer,
-                feature_ids=i.feature_ids,
-                count=i.count,
-                fix_available=i.fix_available,
-            )
-            for i in self.issues
-            if i.severity != "info"
-        ]
+    def promoted(self) -> "Report":
+        """Return a copy of this report with warnings promoted to error (strict mode)."""
+        new = Report(
+            issues=[
+                Issue(
+                    rule_id=i.rule_id,
+                    severity="error",
+                    message=i.message,
+                    layer=i.layer,
+                    feature_ids=i.feature_ids,
+                    count=i.count,
+                    fix_available=i.fix_available,
+                )
+                for i in self.issues
+                if i.severity != "info"
+            ],
+            layers_checked=self.layers_checked,
+            total_features=self.total_features,
+        )
+        return new

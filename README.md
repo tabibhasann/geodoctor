@@ -1,9 +1,25 @@
 # geodoctor 🩺
 
-> The linter for geospatial data. Point it at a Shapefile/GeoJSON/GeoPackage and it finds invalid geometries, broken CRS, schema violations, and topology problems — then auto-fixes what it safely can. Runs in CI.
+**The first comprehensive linter for geospatial data.** Point it at any vector dataset (Shapefile, GeoJSON, GeoPackage, etc.) and get instant feedback on data quality — invalid geometries, broken CRS, schema violations, topology problems, and more. Auto-fixes what it safely can. Built for CI/CD pipelines.
 
 [![PyPI version](https://img.shields.io/pypi/v/geodoctor.svg)](https://pypi.org/project/geodoctor/)
+[![Python](https://img.shields.io/pypi/pyversions/geodoctor.svg)](https://pypi.org/project/geodoctor/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/tabibhasann/geodoctor/actions/workflows/ci.yml/badge.svg)](https://github.com/tabibhasann/geodoctor/actions/workflows/ci.yml)
+[![Downloads](https://img.shields.io/pypi/dm/geodoctor.svg)](https://pypi.org/project/geodoctor/)
+
+## Why geodoctor?
+
+Geospatial data is notoriously error-prone. Invalid geometries break spatial operations, missing CRS causes projection errors, schema violations cause downstream failures. **geodoctor catches these problems before they reach production.**
+
+- ✅ **22 automated checks** across 5 categories (geometry, CRS, schema, structure, topology)
+- ✅ **6 auto-fixes** for common problems (make valid, drop empty, dedupe, reproject, explode, strip whitespace)
+- ✅ **CI/CD ready** — GitHub Actions integration, exit codes, JSON output
+- ✅ **Progress indicators** for large datasets
+- ✅ **Rich HTML reports** with detailed issue breakdown
+- ✅ **Configurable rules** — enable/disable checks, set severity levels
+
+**Zero false positives.** Every check is configurable. Disable rules that don't apply to your data.
 
 ## Quickstart
 

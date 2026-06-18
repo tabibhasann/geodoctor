@@ -1,7 +1,7 @@
 """Generate test fixture datasets."""
 
 import geopandas as gpd
-from shapely.geometry import Point, Polygon, box
+from shapely.geometry import Point, Polygon
 
 
 def good_gpkg(path: str) -> None:
@@ -21,7 +21,6 @@ def good_gpkg(path: str) -> None:
 
 def invalid_geom_geojson(path: str) -> None:
     """A dataset with a self-intersecting polygon (bowtie)."""
-    from shapely.geometry import Polygon
 
     gdf = gpd.GeoDataFrame(
         {"id": [1]},

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "geodoctor"
-version = "0.1.0"
+version = "0.2.0"
 description = "Linter for geospatial data — find invalid geometries, broken CRS, schema violations, and topology problems"
 readme = "README.md"
 license = {text = "MIT"}
@@ -33,9 +33,6 @@ dependencies = [
     "pyyaml>=6.0",
     "jinja2>=3.1",
 ]
-
-[project.optional-dependencies]
-dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.4", "mypy>=1.9"]
 
 [dependency-groups]
 dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.4", "mypy>=1.9"]

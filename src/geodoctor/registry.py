@@ -1,8 +1,9 @@
 """Check registry with decorator-based registration."""
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-from .report import Issue, Severity
+from .report import Severity
 
 CHECKS: dict[str, dict[str, Any]] = {}
 FIXES: dict[str, Callable] = {}

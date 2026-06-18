@@ -1,10 +1,9 @@
 """Tests for CRS checks."""
 
 import geopandas as gpd
-import pytest
 
-from geodoctor.config import CRSConfig, GeodoctorConfig
 from geodoctor.checks.crs import check_missing_crs, check_unexpected_crs
+from geodoctor.config import CRSConfig, GeodoctorConfig
 
 
 class TestMissingCRS:

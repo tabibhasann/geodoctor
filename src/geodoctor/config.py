@@ -1,8 +1,10 @@
 """Configuration model for geodoctor.yml."""
 
-from typing import Any
+from typing import Any, cast
 
 from pydantic import BaseModel, Field
+
+from .report import Severity
 
 
 class FieldSpec(BaseModel):
@@ -18,16 +20,16 @@ class FieldSpec(BaseModel):
 
 
 class CRSConfig(BaseModel):
-    expected: str | None = None
+    expected: str | None = "EPSG:4326"
     require: bool = True
 
 
 class GeometryConfig(BaseModel):
-    allow_invalid: bool = True
-    allow_empty: bool = True
-    allow_duplicates: bool = True
-    single_geometry_type: bool = False
-    min_area_m2: float = 0.0
+    allow_invalid: bool = False
+    allow_empty: bool = False
+    allow_duplicates: bool = False
+    single_geometry_type: bool = True
+    min_area_m2: float = 1.0
     expected_ring_orientation: str | None = None
 
 
@@ -43,8 +45,8 @@ class GeodoctorConfig(BaseModel):
     schema_config: SchemaConfig = Field(default_factory=SchemaConfig)
     severity_overrides: dict[str, str] = Field(default_factory=dict)
 
-    def effective_severity(self, rule_id: str, default: str) -> str:
-        return self.severity_overrides.get(rule_id, default)
+    def effective_severity(self, rule_id: str, default: Severity) -> Severity:
+        return cast(Severity, self.severity_overrides.get(rule_id, default))
 
 
 def load_config(path: str | None = None) -> GeodoctorConfig:

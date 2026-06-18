@@ -1,17 +1,15 @@
 """Tests for geometry checks."""
 
 import geopandas as gpd
-import pytest
 
-from geodoctor.config import GeometryConfig, GeodoctorConfig
 from geodoctor.checks.geometry import (
-    check_invalid_geometry,
-    check_empty_geometry,
-    check_null_geometry,
     check_duplicate_geometry,
-    check_mixed_geometry_types,
+    check_empty_geometry,
+    check_invalid_geometry,
+    check_null_geometry,
     check_out_of_bounds,
 )
+from geodoctor.config import GeodoctorConfig, GeometryConfig
 
 
 class TestInvalidGeometry:
@@ -23,6 +21,7 @@ class TestInvalidGeometry:
 
     def test_invalid_bowtie(self):
         from shapely.geometry import Polygon
+
         gdf = gpd.GeoDataFrame(
             geometry=[Polygon([(0, 0), (1, 1), (0, 1), (1, 0)])],
             crs="EPSG:4326",
@@ -42,6 +41,7 @@ class TestEmptyGeometry:
 
     def test_with_empty(self):
         from shapely import wkt
+
         gdf = gpd.GeoDataFrame(
             geometry=[wkt.loads("POINT(0 0)"), wkt.loads("POLYGON EMPTY")],
             crs="EPSG:4326",
