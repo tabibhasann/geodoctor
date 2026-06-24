@@ -12,8 +12,8 @@
 
 Geospatial data is notoriously error-prone. Invalid geometries break spatial operations, missing CRS causes projection errors, schema violations cause downstream failures. **geodoctor catches these problems before they reach production.**
 
-- ✅ **22 automated checks** across 5 categories (geometry, CRS, schema, structure, topology)
-- ✅ **6 auto-fixes** for common problems (make valid, drop empty, dedupe, reproject, explode, strip whitespace)
+- ✅ **25 automated checks** across 5 categories (geometry, CRS, schema, structure, topology)
+- ✅ **8 auto-fixes** for common problems (make valid, drop empty/null geometries, dedupe, reproject, explode multipart, strip whitespace, remove repeated vertices, normalize ring orientation)
 - ✅ **CI/CD ready** — GitHub Actions integration, exit codes, JSON output
 - ✅ **Progress indicators** for large datasets
 - ✅ **Rich HTML reports** with detailed issue breakdown
@@ -43,10 +43,11 @@ geodoctor rules
 
 | Category | Rules |
 |----------|-------|
-| **Geometry** | invalid, empty, null, duplicate, mixed types, sliver polygons, out-of-bounds coordinates |
-| **CRS** | missing, unexpected, geographic vs projected |
+| **Geometry** | invalid, empty, null, duplicate, mixed types, sliver polygons, out-of-bounds coordinates, repeated vertices, zero-length segments, ring orientation |
+| **CRS** | missing, unexpected |
 | **Schema** | missing fields, wrong types, null in non-nullable, out of range, invalid enum, non-unique, regex mismatch |
 | **Structure** | empty layer, long field names, unsafe identifiers |
+| **Topology** | polygon gaps, polygon overlaps |
 
 ## CI integration
 

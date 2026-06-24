@@ -170,8 +170,27 @@ def fix(
 
     fix_list = [f.strip() for f in fixes.split(",")]
 
+    layers = load_dataset(path)
+    ext = Path(output_path).suffix.lower()
+    driver_map = {
+        ".gpkg": "GPKG",
+        ".geojson": "GeoJSON",
+        ".json": "GeoJSON",
+        ".shp": "ESRI Shapefile",
+        ".fgb": "FlatGeobuf",
+    }
+    driver = driver_map.get(ext)
+
+    if len(layers) > 1 and driver != "GPKG":
+        typer.echo(
+            "Error: multi-layer inputs require a GeoPackage output "
+            "so each fixed layer can be preserved.",
+            err=True,
+        )
+        raise typer.Exit(2)
+
     changes = []
-    for layer_name, gdf in load_dataset(path):
+    for layer_name, gdf in layers:
         for fix_id in fix_list:
             if fix_id == "reproject":
                 if config.crs.expected:
@@ -184,19 +203,11 @@ def fix(
                 gdf = fn(gdf)
                 changes.append(f"Applied {fix_id} to {layer_name} ({old_len} → {len(gdf)} features)")
 
-        ext = Path(output_path).suffix.lower()
-        driver_map = {
-            ".gpkg": "GPKG",
-            ".geojson": "GeoJSON",
-            ".json": "GeoJSON",
-            ".shp": "ESRI Shapefile",
-            ".fgb": "FlatGeobuf",
-        }
-        driver = driver_map.get(ext)
-
         if driver == "ESRI Shapefile" and ext == ".shp":
             # geopandas handles Shapefile via the directory approach
             gdf.to_file(output_path)
+        elif driver == "GPKG":
+            gdf.to_file(output_path, driver=driver, layer=layer_name)
         else:
             gdf.to_file(output_path, driver=driver)
 

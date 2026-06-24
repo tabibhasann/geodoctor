@@ -1,6 +1,7 @@
 """Console, JSON, and HTML renderers for reports."""
 
 import json
+from io import StringIO
 from pathlib import Path
 
 from ..report import Report
@@ -13,13 +14,12 @@ def render_console(report: Report) -> str:
     from rich.table import Table
     from rich.text import Text
 
-    console = Console(record=True, file=open("/dev/null", "w"))
+    console = Console(record=True, file=StringIO())
     total = len(report.issues)
 
     if total == 0:
         console.print(Panel("[green bold]✓ All checks passed![/]", title="geodoctor"))
         text = console.export_text()
-        console.file.close()
         return text
 
     sev_colors = {"error": "red", "warning": "yellow", "info": "blue"}
@@ -57,7 +57,6 @@ def render_console(report: Report) -> str:
 
     console.print(table)
     text = console.export_text()
-    console.file.close()
     return text
 
 

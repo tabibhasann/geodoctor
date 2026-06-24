@@ -57,7 +57,7 @@ def _make_point_gdf(n: int) -> gpd.GeoDataFrame:
         {
             "id": range(n),
             "name": [f"pt_{i}" for i in range(n)],
-            "value": [i for i in range(n)],
+            "value": list(range(n)),
             "geometry": [Point(i, i) for i in range(n)],
         },
         crs="EPSG:4326",

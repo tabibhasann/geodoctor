@@ -164,10 +164,15 @@ def check_regex_mismatch(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> list
 @register_check("whitespace_in_string", severity="info", description="String fields have leading/trailing whitespace")
 def check_whitespace_in_string(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> list[Issue]:
     issues = []
-    for col in gdf.select_dtypes(include=["object"]).columns:
-        if col == "geometry":
+    for col in gdf.columns:
+        if col == gdf.geometry.name:
             continue
-        bad = gdf.index[gdf[col].apply(lambda v: isinstance(v, str) and v != v.strip())].tolist()
+        string_mask = gdf[col].apply(lambda v: isinstance(v, str))
+        if not string_mask.any():
+            continue
+        bad = gdf.index[
+            gdf[col].apply(lambda v: isinstance(v, str) and v != v.strip())
+        ].tolist()
         if bad:
             issues.append(
                 Issue(
