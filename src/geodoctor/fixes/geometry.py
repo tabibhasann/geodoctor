@@ -52,7 +52,7 @@ def fix_strip_whitespace(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return gdf
 
 
-def pd_isna(v) -> bool:
+def pd_isna(v: object) -> bool:
     """Null-safe check that handles NaN, None, and pd.NA uniformly."""
     if v is None:
         return True
@@ -70,7 +70,7 @@ def fix_remove_repeated_vertices(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
     gdf = gdf.copy()
 
-    def _dedup_coords(coords):
+    def _dedup_coords(coords: list) -> list:
         if len(coords) < 2:
             return coords
         result = [coords[0]]

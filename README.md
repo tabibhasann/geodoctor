@@ -6,8 +6,8 @@
 [![Python](https://img.shields.io/pypi/pyversions/geodoctor.svg)](https://pypi.org/project/geodoctor/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/tabibhasann/geodoctor/actions/workflows/ci.yml/badge.svg)](https://github.com/tabibhasann/geodoctor/actions/workflows/ci.yml)
-[![Coverage](https://github.com/tabibhasann/geodoctor/actions/workflows/coverage.yml/badge.svg)](https://github.com/tabibhasann/geodoctor/actions)
-[![Tests](https://img.shields.io/badge/tests-114%20passed-brightgreen)](https://github.com/tabibhasann/geodoctor/actions)
+[![Coverage](https://img.shields.io/badge/coverage-70%25-brightgreen)](https://github.com/tabibhasann/geodoctor/actions)
+[![Tests](https://img.shields.io/badge/tests-160%2B%20passed-brightgreen)](https://github.com/tabibhasann/geodoctor/actions)
 [![Downloads](https://img.shields.io/pypi/dm/geodoctor.svg)](https://pypi.org/project/geodoctor/)
 
 
@@ -26,16 +26,16 @@ Geospatial data is notoriously error-prone. Invalid geometries break spatial ope
 
 ### How it compares
 
-| Tool | Focus | CI-first | Auto-fix | GitHub annotations | Formats |
-|---|---|---|---|---|---|
-| **geodoctor** | Lint + fix | ✅ | ✅ | ✅ | Shapefile, GeoJSON, GPKG, FGB |
-| geoassert | Contract validation | ✅ | ❌ | ✅ | GeoParquet, PostGIS, BigQuery |
-| geolint | Full CLI + web UI | ✅ | ✅ | ❌ | GPKG, GeoJSON |
-| geojson-validator | GeoJSON only | ❌ | ✅ | ❌ | GeoJSON |
-| GeoQA | Profiling + reports | ❌ | ✅ | ❌ | Shapefile, GeoJSON, GPKG |
+| Tool | Focus | CI-first | Auto-fix | GitHub annotations | Pre-commit | Formats |
+|---|---|---|---|---|---|---|
+| **geodoctor** | Lint + fix | ✅ | ✅ 8 fixes | ✅ | ✅ | Shapefile, GeoJSON, GPKG, FGB, GeoParquet |
+| [geoassert](https://github.com/geoassert/geoassert) | Contract validation | ✅ | ❌ | ✅ | ❌ | GeoParquet, PostGIS, BigQuery |
+| [geolint](https://github.com/geolint/geolint) | Full CLI + web UI | ✅ | ✅ | ❌ | ❌ | GPKG, GeoJSON |
+| [geojson-validator](https://www.npmjs.com/package/geojson-validator) | GeoJSON only | ❌ | ✅ | ❌ | ❌ | GeoJSON |
+| [GeoQA](https://github.com/geoqa/geoqa) | Profiling + reports | ❌ | ✅ | ❌ | ❌ | Shapefile, GeoJSON, GPKG |
 
 geodoctor is the only tool that combines CI-first design, auto-fix, GitHub
-annotations, and broad format support in a single `pip install`.
+annotations, pre-commit hooks, and broad format support in a single `pip install`.
 
 **Configurable by design.** Every check can be enabled or disabled. Disable rules that don't apply to your data.
 
