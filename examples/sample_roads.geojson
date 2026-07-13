@@ -1,0 +1,22 @@
+{
+  "type": "FeatureCollection",
+  "name": "sample_roads",
+  "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::4326" } },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "id": 1, "name": "Main Street", "type": "primary", "lanes": 2 },
+      "geometry": { "type": "LineString", "coordinates": [[90.40, 23.81], [90.41, 23.82], [90.42, 23.83]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": 2, "name": "Park Road", "type": "secondary", "lanes": 1 },
+      "geometry": { "type": "LineString", "coordinates": [[90.42, 23.83], [90.43, 23.84]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": 3, "name": "River Road", "type": "tertiary", "lanes": 1 },
+      "geometry": { "type": "LineString", "coordinates": [[90.43, 23.84], [90.44, 23.85], [90.45, 23.86]] }
+    }
+  ]
+}
