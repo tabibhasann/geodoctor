@@ -89,6 +89,9 @@ def check_empty_geometry(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> list
     description="Features with null/missing geometry",
 )
 def check_null_geometry(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> list[Issue]:
+    if config.geometry.allow_null:
+        return []
+
     nulls = gdf[gdf.geometry.isna()]
     if len(nulls) == 0:
         return []

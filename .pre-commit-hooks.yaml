@@ -1,11 +1,11 @@
 - id: geodoctor-check
   name: geodoctor
-  description: Lint geospatial vector datasets (GeoPackage, GeoJSON, FlatGeobuf, Shapefile).
-  entry: geodoctor check
+  description: Lint geospatial vector datasets (GeoPackage, GeoJSON, FlatGeobuf, Shapefile, GeoParquet).
+  entry: geodoctor check --ci
   language: python
   language_version: python3
   types: [file]
-  files: \.(gpkg|geojson|json|fgb|shp)$
-  args: ["--config", "geodoctor.yml"]
+  files: \.(gpkg|geojson|json|fgb|shp|parquet|geoparquet)$
+  pass_filenames: true
   require_serial: false
   additional_dependencies: ["geodoctor"]

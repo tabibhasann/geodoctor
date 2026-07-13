@@ -29,7 +29,9 @@ def _is_rule_active(rule_id: str, config: GeodoctorConfig) -> bool:
     if rule_id == "invalid_geometry":
         return not geom.allow_invalid
     if rule_id in {"empty_geometry", "null_geometry"}:
-        return not geom.allow_empty
+        if rule_id == "null_geometry":
+            return not config.geometry.allow_null
+        return not config.geometry.allow_empty
     if rule_id == "duplicate_geometry":
         return not geom.allow_duplicates
     if rule_id == "mixed_geometry_types":

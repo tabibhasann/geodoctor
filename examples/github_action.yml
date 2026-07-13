@@ -1,0 +1,33 @@
+# GitHub Action: Run geodoctor on geospatial data files
+# .github/workflows/geodoctor.yml
+name: Geospatial Data Quality
+
+on:
+  push:
+    paths:
+      - '**.shp'
+      - '**.geojson'
+      - '**.gpkg'
+      - '**.kml'
+  pull_request:
+    paths:
+      - '**.shp'
+      - '**.geojson'
+      - '**.gpkg'
+      - '**.kml'
+
+jobs:
+  geodoctor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install geodoctor
+      - run: geodoctor check data/ --recursive --format json > geodoctor-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: geodoctor-report
+          path: geodoctor-report.json

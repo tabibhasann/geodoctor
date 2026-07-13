@@ -27,6 +27,12 @@ def check_empty_layer(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> list[Is
     description="Field name exceeds Shapefile limit of 10 characters",
 )
 def check_shapefile_field_name_too_long(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> list[Issue]:
+    import os
+
+    path = getattr(gdf, "_source_path", "")
+    if path and os.path.splitext(str(path))[1].lower() != ".shp":
+        return []
+
     long_fields = [c for c in gdf.columns if len(c) > 10]
     if not long_fields:
         return []

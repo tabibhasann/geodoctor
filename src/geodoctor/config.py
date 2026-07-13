@@ -27,6 +27,7 @@ class CRSConfig(BaseModel):
 class GeometryConfig(BaseModel):
     allow_invalid: bool = False
     allow_empty: bool = False
+    allow_null: bool = False
     allow_duplicates: bool = False
     single_geometry_type: bool = True
     min_area_m2: float = 1.0

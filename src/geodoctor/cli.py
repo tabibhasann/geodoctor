@@ -1,6 +1,7 @@
 """CLI entry point — typer-powered command-line interface."""
 
 from pathlib import Path
+from typing import Any
 
 import typer
 
@@ -11,9 +12,11 @@ from . import (
 from .config import GeodoctorConfig, load_config
 from .dataset import load_dataset
 from .registry import CHECKS
+from .renderers.console import render_ci as _render_ci
 from .renderers.console import render_console
 from .renderers.console import render_html as _render_html
 from .renderers.console import render_json as _render_json
+from .renderers.console import render_sarif as _render_sarif
 from .report import Report
 
 app = typer.Typer(
@@ -88,7 +91,7 @@ def _is_rule_active(rule_id: str, config: GeodoctorConfig, default_sev: str) -> 
     if rule_id == "empty_geometry":
         return not config.geometry.allow_empty
     if rule_id == "null_geometry":
-        return not config.geometry.allow_empty
+        return not config.geometry.allow_null
     if rule_id == "duplicate_geometry":
         return not config.geometry.allow_duplicates
     if rule_id == "mixed_geometry_types":
@@ -110,9 +113,10 @@ def _is_rule_active(rule_id: str, config: GeodoctorConfig, default_sev: str) -> 
 def check(
     path: str = typer.Argument(..., help="Path to the dataset"),
     config_path: str = typer.Option(None, "--config", "-c", help="Path to geodoctor.yml"),
-    format: str = typer.Option("text", "--format", "-f", help="Output format: text, json, html"),
+    format: str = typer.Option("text", "--format", "-f", help="Output format: text, json, html, github, sarif, ci"),
     layer: str = typer.Option(None, "--layer", "-l", help="Layer name to check"),
     strict: bool = typer.Option(False, "--strict", help="Promote warnings to errors"),
+    ci: bool = typer.Option(False, "--ci", help="CI mode: compact output, exit 1 on errors, 0 on warnings only"),
     output: str = typer.Option(None, "--output", "-o", help="Output file path"),
 ):
     """Check a geospatial dataset for issues."""
@@ -125,6 +129,9 @@ def check(
     report = _run_checks(path, config, layer)
     display_report = report.promoted() if strict else report
 
+    if ci:
+        format = "ci"
+
     if format == "json":
         output_str = _render_json(display_report)
         if output:
@@ -132,9 +139,33 @@ def check(
         else:
             typer.echo(output_str)
     elif format == "html":
-        # render_html writes the file if output is set; otherwise return the string
         output_str = _render_html(display_report, output)
         if not output:
+            typer.echo(output_str)
+    elif format == "github":
+        lines = []
+        for issue in display_report.issues:
+            level = "error" if issue.severity == "error" else "warning"
+            loc = f"file={path}"
+            if issue.layer:
+                loc += f",layer={issue.layer}"
+            lines.append(f"::{level} {loc}::{issue.rule_id}: {issue.message}")
+        output_str = "\n".join(lines) if lines else "::notice ::All checks passed"
+        if output:
+            Path(output).write_text(output_str)
+        else:
+            typer.echo(output_str)
+    elif format == "sarif":
+        output_str = _render_sarif(display_report, run_path=path)
+        if output:
+            Path(output).write_text(output_str)
+        else:
+            typer.echo(output_str)
+    elif format == "ci":
+        output_str = _render_ci(display_report)
+        if output:
+            Path(output).write_text(output_str)
+        else:
             typer.echo(output_str)
     else:
         output_str = render_console(display_report)
@@ -226,7 +257,7 @@ def init(
     import yaml
 
     for _layer_name, gdf in load_dataset(path):  # noqa: PERF102  (writes per-layer)
-        config = {
+        config: dict[str, Any] = {
             "crs": {
                 "expected": gdf.crs.to_string() if gdf.crs else None,
                 "require": True,
@@ -251,7 +282,7 @@ def init(
             unique_count = gdf[col].nunique()
             if unique_count == len(gdf) and not nullable:
                 spec["unique"] = True
-            config["schema"]["fields"][col] = spec  # type: ignore[index]
+            config["schema"]["fields"][col] = spec
 
         yaml_str = yaml.dump(config, default_flow_style=False, sort_keys=False)
         Path(output).write_text(yaml_str)
@@ -272,8 +303,25 @@ def _dtype_to_str(dtype: str) -> str:
 
 
 @app.command()
-def rules():
+def rules(
+    json_output: bool = typer.Option(False, "--json", help="Output as JSON"),
+):
     """List all available checks."""
+    import json as _json
+
+    if json_output:
+        rules_list = []
+        for rule_id, info in CHECKS.items():
+            rules_list.append({
+                "rule_id": rule_id,
+                "severity": info["severity"],
+                "description": info["description"],
+                "fix_available": bool(info.get("fix_id")),
+                "fix_id": info.get("fix_id"),
+            })
+        typer.echo(_json.dumps({"rules": rules_list, "total": len(rules_list)}, indent=2))
+        return
+
     from rich.console import Console
     from rich.table import Table
 
@@ -293,6 +341,60 @@ def rules():
         )
 
     console.print(table)
+
+
+@app.command()
+def diff(
+    path_a: str = typer.Argument(..., help="Path to the first dataset"),
+    path_b: str = typer.Argument(..., help="Path to the second dataset"),
+    config_path: str = typer.Option(None, "--config", "-c", help="Path to geodoctor.yml"),
+    format: str = typer.Option("text", "--format", "-f", help="Output format: text, json"),
+    layer: str = typer.Option(None, "--layer", "-l", help="Layer name to compare"),
+):
+    """Compare two datasets by running checks on both and showing the difference."""
+    config = load_config(config_path)
+
+    for p in (path_a, path_b):
+        if not Path(p).exists():
+            typer.echo(f"Error: file not found: {p}", err=True)
+            raise typer.Exit(2)
+
+    report_a = _run_checks(path_a, config, layer)
+    report_b = _run_checks(path_b, config, layer)
+
+    issues_a = {i.rule_id for i in report_a.issues}
+    issues_b = {i.rule_id for i in report_b.issues}
+
+    fixed = issues_a - issues_b
+    introduced = issues_b - issues_a
+    persisted = issues_a & issues_b
+
+    if format == "json":
+        import json as _json
+
+        output = {
+            "dataset_a": path_a,
+            "dataset_b": path_b,
+            "summary": {
+                "issues_in_a": len(report_a.issues),
+                "issues_in_b": len(report_b.issues),
+                "fixed": sorted(fixed),
+                "introduced": sorted(introduced),
+                "persisted": sorted(persisted),
+            },
+        }
+        typer.echo(_json.dumps(output, indent=2))
+    else:
+        typer.echo(f"Comparing: {path_a} -> {path_b}\n")
+        typer.echo(f"  Issues in A:  {len(report_a.issues)}")
+        typer.echo(f"  Issues in B:  {len(report_b.issues)}")
+        typer.echo(f"  Fixed:        {len(fixed)}  {sorted(fixed) if fixed else ''}")
+        typer.echo(f"  Introduced:   {len(introduced)}  {sorted(introduced) if introduced else ''}")
+        typer.echo(f"  Persisted:    {len(persisted)}  {sorted(persisted) if persisted else ''}")
+
+    if introduced:
+        raise typer.Exit(1)
+    raise typer.Exit(0)
 
 
 @app.command()

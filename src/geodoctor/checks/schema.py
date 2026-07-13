@@ -33,7 +33,9 @@ def check_wrong_field_type(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> li
             continue
         dtype = str(gdf[field].dtype)
         expected_kind = type_map.get(spec.type, "object")
-        if expected_kind == "integer" and "int" not in dtype or expected_kind == "floating" and "float" not in dtype:
+        if (expected_kind == "integer" and "int" not in dtype) or (
+            expected_kind == "floating" and "float" not in dtype
+        ):
             issues.append(
                 Issue(
                     rule_id="wrong_field_type",

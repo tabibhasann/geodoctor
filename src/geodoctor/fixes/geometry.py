@@ -66,17 +66,51 @@ def pd_isna(v) -> bool:
 
 def fix_remove_repeated_vertices(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Remove consecutive identical vertices from every geometry."""
+    from shapely.geometry import LineString, MultiLineString, MultiPolygon, Polygon
+
     gdf = gdf.copy()
+
+    def _dedup_coords(coords):
+        if len(coords) < 2:
+            return coords
+        result = [coords[0]]
+        for c in coords[1:]:
+            if c != result[-1]:
+                result.append(c)
+        return result
 
     def _clean(geom):
         if geom is None or geom.is_empty:
             return geom
         try:
-            from shapely import set_precision
-
-            return set_precision(geom, 0.0)
+            if geom.geom_type == "Point":
+                return geom
+            if geom.geom_type == "LineString":
+                pts = _dedup_coords(list(geom.coords))
+                return LineString(pts) if len(pts) >= 2 else geom
+            if geom.geom_type == "MultiLineString":
+                lines = []
+                for line in geom.geoms:
+                    pts = _dedup_coords(list(line.coords))
+                    if len(pts) >= 2:
+                        lines.append(LineString(pts))
+                return MultiLineString(lines) if lines else geom
+            if geom.geom_type == "Polygon":
+                ext = _dedup_coords(list(geom.exterior.coords))
+                ints = [_dedup_coords(list(r.coords)) for r in geom.interiors]
+                return Polygon(exterior=ext, interiors=ints) if len(ext) >= 4 else geom
+            if geom.geom_type == "MultiPolygon":
+                polys = []
+                for poly in geom.geoms:
+                    ext = _dedup_coords(list(poly.exterior.coords))
+                    if len(ext) < 4:
+                        continue
+                    ints = [_dedup_coords(list(r.coords)) for r in poly.interiors]
+                    polys.append(Polygon(exterior=ext, interiors=ints))
+                return MultiPolygon(polys) if polys else geom
         except Exception:
             return geom
+        return geom
 
     gdf["geometry"] = gdf.geometry.apply(_clean)
     return gdf

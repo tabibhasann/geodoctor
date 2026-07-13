@@ -96,3 +96,90 @@ def render_html(report: Report, output_path: str | None = None) -> str:
         Path(output_path).write_text(html)
 
     return html
+
+
+def render_sarif(report: Report, run_path: str = "") -> str:
+    """Render a report as SARIF 2.1.0 JSON for security tooling integration."""
+    sarif_level = {"error": "error", "warning": "warning", "info": "note"}
+
+    results = []
+    for issue in report.issues:
+        results.append({
+            "ruleId": issue.rule_id,
+            "level": sarif_level.get(issue.severity, "warning"),
+            "message": {"text": issue.message},
+            "locations": [
+                {
+                    "physicalLocation": {
+                        "artifactLocation": {
+                            "uri": run_path,
+                        },
+                        "region": {
+                            "startLine": 1,
+                        },
+                    },
+                    "logicalLocations": [
+                        {
+                            "name": issue.layer,
+                            "kind": "layer",
+                        },
+                    ] if issue.layer else [],
+                }
+            ],
+            "partialFingerprints": {
+                "primaryLocationLineHash": issue.rule_id,
+            },
+        })
+
+    sarif = {
+        "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/cs01/schemas/sarif-schema-2.1.0.json",
+        "version": "2.1.0",
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "geodoctor",
+                        "informationUri": "https://github.com/tabibhasann/geodoctor",
+                        "rules": [
+                            {
+                                "id": rule_id,
+                                "name": rule_id,
+                                "shortDescription": {"text": info.get("description", "")},
+                                "defaultConfiguration": {
+                                    "level": sarif_level.get(info.get("severity", "warning"), "warning"),
+                                },
+                            }
+                            for rule_id, info in _get_all_rules().items()
+                        ],
+                    }
+                },
+                "results": results,
+            }
+        ],
+    }
+    return json.dumps(sarif, indent=2)
+
+
+def _get_all_rules() -> dict:
+    """Get all registered rules (lazy import to avoid circular deps)."""
+    from ..registry import CHECKS
+
+    return {rid: {"description": info["description"], "severity": info["severity"]} for rid, info in CHECKS.items()}
+
+
+def render_ci(report: Report) -> str:
+    """Render a compact CI-friendly summary (one line per issue, no colors)."""
+    lines = []
+    total = len(report.issues)
+    if total == 0:
+        return "geodoctor: 0 issues found. All checks passed."
+
+    errors = len(report.errors)
+    warnings = len(report.warnings)
+    infos = len(report.infos)
+    lines.append(f"geodoctor: {total} issue(s) — {errors} error(s), {warnings} warning(s), {infos} info(s)")
+    for issue in report.issues:
+        loc = f"[{issue.layer}]" if issue.layer else ""
+        affected = f" ({len(issue.feature_ids)} affected)" if issue.feature_ids else ""
+        lines.append(f"  {issue.severity.upper():7s} {issue.rule_id:30s} {loc} {issue.message}{affected}")
+    return "\n".join(lines)
