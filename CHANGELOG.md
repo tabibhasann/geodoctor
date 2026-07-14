@@ -3,6 +3,19 @@
 All notable changes to geodoctor are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.2.0](https://github.com/tabibhasann/geodoctor/compare/v0.1.0...v0.2.0) (2026-07-14)
+
+
+### Features
+
+* add type hints, py.typed, mypy strict, error path tests, coverage tracking, release workflow, improved comparison table ([1d764e3](https://github.com/tabibhasann/geodoctor/commit/1d764e33fd7f27a33cb316910413774bfb812911))
+
+
+### Documentation
+
+* add issue/PR templates and missing hygiene files ([30a5efc](https://github.com/tabibhasann/geodoctor/commit/30a5efc9b86d03134e3f3794e9a455b9aab2124e))
+* add sample GeoJSON data files for examples ([f43214f](https://github.com/tabibhasann/geodoctor/commit/f43214fb334fc3f6f48af26c0157884b05ec4f75))
+
 ## [0.2.0] - 2026-06-16
 
 ### Added
