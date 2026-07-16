@@ -9,6 +9,8 @@ This project follows [Semantic Versioning](https://semver.org/).
 - Topology checks: `polygon_overlaps`, `polygon_gaps` (registered and active in the CLI)
 - Composite GitHub Action (`.github/actions/geodoctor`) for running `geodoctor check` in CI
 - `.pre-commit-hooks.yaml` so `geodoctor-check` can be installed as a pre-commit hook
+- `geodoctor diff` command for comparing two datasets
+- `--ci` flag on `geodoctor check` for compact CI output
 - HTML report `output` flag now writes a file when provided
 - `geodoctor rules` table now shows a Fix column
 - `geodoctor init` generates per-field `nullable` flags from a real dataset

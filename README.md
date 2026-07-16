@@ -2,13 +2,13 @@
 
 **A fast, opinionated linter for geospatial data — like `ruff`, but for maps.** Point it at any vector dataset (Shapefile, GeoJSON, GeoPackage, etc.) and get instant feedback on data quality — invalid geometries, broken CRS, schema violations, topology problems, and more. Auto-fixes what it safely can. Built for CI/CD pipelines.
 
-[![PyPI version](https://img.shields.io/pypi/v/geodoctor.svg)](https://pypi.org/project/geodoctor/)
-[![Python](https://img.shields.io/pypi/pyversions/geodoctor.svg)](https://pypi.org/project/geodoctor/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/tabibhasann/geodoctor/actions/workflows/ci.yml/badge.svg)](https://github.com/tabibhasann/geodoctor/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-70%25-brightgreen)](https://github.com/tabibhasann/geodoctor/actions)
-[![Tests](https://img.shields.io/badge/tests-160%2B%20passed-brightgreen)](https://github.com/tabibhasann/geodoctor/actions)
-[![Downloads](https://img.shields.io/pypi/dm/geodoctor.svg)](https://pypi.org/project/geodoctor/)
+[![Tests](https://img.shields.io/badge/tests-163%20passed-brightgreen)](https://github.com/tabibhasann/geodoctor/actions)
+
+> **Pre-release:** `geodoctor` is not yet published to PyPI. Install from a checkout; PyPI commands below describe the intended release interface.
 
 
 **Demo:** Example output and CI integration: see [Examples](#examples) above
@@ -34,15 +34,17 @@ Geospatial data is notoriously error-prone. Invalid geometries break spatial ope
 | [geojson-validator](https://www.npmjs.com/package/geojson-validator) | GeoJSON only | ❌ | ✅ | ❌ | ❌ | GeoJSON |
 | [GeoQA](https://github.com/geoqa/geoqa) | Profiling + reports | ❌ | ✅ | ❌ | ❌ | Shapefile, GeoJSON, GPKG |
 
-geodoctor is the only tool that combines CI-first design, auto-fix, GitHub
-annotations, pre-commit hooks, and broad format support in a single `pip install`.
+geodoctor combines CI-first design, safe auto-fixes, GitHub annotations,
+pre-commit hooks, and broad vector-format support in one focused CLI.
 
 **Configurable by design.** Every check can be enabled or disabled. Disable rules that don't apply to your data.
 
 ## Quickstart
 
 ```bash
-pip install geodoctor
+git clone https://github.com/tabibhasann/geodoctor.git
+cd geodoctor
+python -m pip install -e .
 
 # Check a dataset
 geodoctor check data.gpkg
@@ -72,7 +74,7 @@ geodoctor rules
 ### GitHub Actions
 
 ```yaml
-- uses: tabibhasann/geodoctor@v0
+- uses: tabibhasann/geodoctor@v0.2.0
   with:
     path: "data/*.gpkg"
     config: "geodoctor.yml"
@@ -83,7 +85,7 @@ Or run directly for GitHub annotations:
 ```yaml
 - name: Check geodata
   run: |
-    pip install geodoctor
+    pip install "git+https://github.com/tabibhasann/geodoctor.git@v0.2.0"
     geodoctor check data/*.gpkg --format github --strict
 ```
 
@@ -95,7 +97,7 @@ Annotations appear inline on PR diffs — just like `ruff check`.
 # .pre-commit-config.yaml
 repos:
   - repo: https://github.com/tabibhasann/geodoctor
-    rev: v0.1.0
+    rev: v0.2.0
     hooks:
       - id: geodoctor
         args: ["check", "--strict"]
@@ -122,30 +124,41 @@ severity_overrides:
   duplicate_geometry: warning
 ```
 
+## Alternatives
+
+| Tool | Type | Scope | CLI | CI/CD | Pre-commit | Auto-fix |
+|------|------|-------|-----|-------|------------|----------|
+| **geodoctor** | Linter | 25 checks across 5 categories (geometry, CRS, schema, structure, topology) | Yes | GitHub Action | Yes | 8 fixes |
+| [goodtables](https://github.com/frictionlessdata/frictionless-py) | Validator | Tabular data validation (CSV/Excel) | Yes | Yes | No | No |
+| [geojsonlint](https://github.com/JasonSanford/geojsonlint.com) | Linter | GeoJSON RFC 7946 compliance | CLI + web | No | No | No |
+| [QGIS Validator](https://docs.qgis.org) | Desktop | Interactive geometry checking | No | No | No | Manual |
+| [ogrinfo](https://gdal.org/programs/ogrinfo.html) | CLI | Format inspection + basic validation | Yes | No | No | No |
+
+**Why geodoctor?** It's the only tool that combines CLI linting, CI integration, pre-commit hooks, and auto-fixes for geospatial data quality — purpose-built for the "shift-left" workflow.
+
 ## Roadmap
 
 **What works now:**
 - 25 checks across 5 categories (geometry, CRS, schema, structure, topology)
 - 8 auto-fixes (make valid, drop empty/null, dedupe, reproject, explode multipart, strip whitespace, remove repeated vertices, normalize ring orientation)
-- `check`, `fix`, `init`, `rules` commands
-- Text, JSON, HTML, and GitHub annotations output formats
+- `check`, `fix`, `init`, `rules`, `diff` commands
+- Text, JSON, HTML, GitHub annotations, and CI output formats
 - `--strict` mode (promote warnings to errors)
+- `--ci` flag for compact CI output
 - Configurable rules via `geodoctor.yml`
 - Progress indicators for large datasets
 
 **Planned:**
 - GeoParquet support
-- `geodoctor check --ci` mode (exit non-zero on warnings, not just errors)
 - Format-aware checks for raster datasets
 - SARIF output for GitHub security tab
-- `geodoctor diff` command (compare two datasets)
 
 ## Examples
 
 ### Validate a shapefile
 
 ```bash
-geodoctor check --input data/cities.shp --strict
+geodoctor check data/cities.shp --strict
 ```
 
 ```
@@ -163,9 +176,9 @@ Summary: 1 error, 1 warning, 2 checks passed
 ### Lint a GeoPackage in CI
 
 ```yaml
-- uses: tabibhasan/geodoctor@v0.2.0
+- uses: tabibhasann/geodoctor@v0.2.0
   with:
-    input: data/boundaries.gpkg
+    path: data/boundaries.gpkg
     strict: true
 ```
 
@@ -173,7 +186,7 @@ Summary: 1 error, 1 warning, 2 checks passed
 
 ```yaml
 repos:
-  - repo: https://github.com/tabibhasan/geodoctor
+  - repo: https://github.com/tabibhasann/geodoctor
     rev: v0.2.0
     hooks:
       - id: geodoctor
@@ -187,32 +200,37 @@ repos:
 | Command | Description |
 |---------|-------------|
 | `geodoctor check <file>` | Validate a geospatial data file |
-| `geodoctor check <dir>` | Validate all files in a directory |
 | `geodoctor check --strict` | Strict mode for CI (fail on warnings) |
 | `geodoctor check --format json` | JSON output for CI integration |
-| `geodoctor fix <file>` | Auto-fix common issues |
+| `geodoctor check --format github` | GitHub annotations output |
+| `geodoctor fix <file> -o <output>` | Auto-fix common issues |
+| `geodoctor init <file>` | Generate a starter geodoctor.yml |
+| `geodoctor rules` | List all available checks |
+| `geodoctor diff <a> <b>` | Compare two datasets |
+| `geodoctor version` | Print version |
 
 ### Python API
 
 ```python
-from geodoctor import check, fix
-from geodoctor.rules import CRSRule, GeometryRule
+from geodoctor import validate, load_config
 
-# Validate a file
-result = check('data.geojson')
-print(result.passed, result.warnings, result.errors)
+# Validate a file with defaults
+report = validate('data.geojson')
+print(report.has_errors, len(report.warnings), len(report.errors))
 
-# Validate with specific rules
-result = check('data.shp', rules=[CRSRule(), GeometryRule()])
+# Validate with a config
+config = load_config('geodoctor.yml')
+report = validate('data.shp', config=config)
 
-# Auto-fix
-fixed = fix('data.geojson')
+# Access issues by severity
+for issue in report.errors:
+    print(f"  {issue.rule_id}: {issue.message}")
 ```
 
 ### GitHub Action
 
 ```yaml
-- uses: tabibhasann/geodoctor@v1
+- uses: tabibhasann/geodoctor@v0.2.0
   with:
     path: ./data
     strict: true
@@ -223,7 +241,7 @@ fixed = fix('data.geojson')
 ```yaml
 repos:
   - repo: https://github.com/tabibhasann/geodoctor
-    rev: v1.0.0
+    rev: v0.2.0
     hooks:
       - id: geodoctor
 ```
@@ -231,10 +249,15 @@ repos:
 
 ## CLI Reference
 
-\`\`\`bash
+```bash
 geodoctor --help     # Show all available commands and options
-geodoctor --version  # Print the installed version
-\`\`\`
+geodoctor version    # Print the installed version
+geodoctor check data.gpkg --strict --format json
+geodoctor fix data.gpkg -o clean.gpkg --fixes make_valid,drop_empty_null
+geodoctor init data.gpkg -o geodoctor.yml
+geodoctor rules --json
+geodoctor diff old.gpkg new.gpkg --format json
+```
 
 ## Contributing
 

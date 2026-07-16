@@ -190,3 +190,23 @@ class TestGenerateHtmlReport:
         # Should handle unicode properly
         assert "unicode_test" in html
         assert "Invalid geometry" in html
+
+    def test_report_escapes_untrusted_issue_fields(self):
+        """Dataset-derived issue content must not become executable HTML."""
+        issue = Issue(
+            rule_id='<img src=x onerror="alert(1)">',
+            severity='error" onclick="alert(2)',  # type: ignore[arg-type]
+            layer="<svg onload=alert(3)>",
+            message="<script>alert(4)</script>",
+            feature_ids=[1],
+        )
+
+        html = generate_html_report(Report(issues=[issue], total_features=1))
+
+        assert "<img src=x" not in html
+        assert "<svg onload" not in html
+        assert "<script>alert(4)</script>" not in html
+        assert "&lt;img src=x" in html
+        assert "&lt;svg onload=alert(3)&gt;" in html
+        assert "&lt;script&gt;alert(4)&lt;/script&gt;" in html
+        assert 'class="error&#34; onclick=&#34;alert(2)"' in html

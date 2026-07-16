@@ -78,11 +78,17 @@ def render_json(report: Report) -> str:
 
 def render_html(report: Report, output_path: str | None = None) -> str:
     """Render a report as HTML using Jinja2."""
-    from jinja2 import Environment, FileSystemLoader
+    from jinja2 import Environment, FileSystemLoader, select_autoescape
 
     # Load template from templates directory
     template_dir = Path(__file__).parent / "templates"
-    env = Environment(loader=FileSystemLoader(template_dir))
+    env = Environment(
+        loader=FileSystemLoader(template_dir),
+        autoescape=select_autoescape(
+            enabled_extensions=("html", "xml"),
+            default_for_string=True,
+        ),
+    )
     template = env.get_template("report.html")
 
     html = template.render(
@@ -93,7 +99,7 @@ def render_html(report: Report, output_path: str | None = None) -> str:
     )
 
     if output_path:
-        Path(output_path).write_text(html)
+        Path(output_path).write_text(html, encoding="utf-8")
 
     return html
 

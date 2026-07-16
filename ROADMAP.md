@@ -5,6 +5,7 @@
 ## Now
 
 - Keep the current 25 checks and 8 fixes stable.
+- `geodoctor diff` command for comparing two datasets (added in 0.2.0).
 - Improve fixture coverage for GeoPackage, Shapefile, and GeoJSON edge cases.
 - Keep CLI, JSON, and HTML report output consistent.
 
@@ -12,7 +13,7 @@
 
 - Add more topology diagnostics for administrative boundaries and parcels.
 - Add config presets for common data-quality profiles.
-- Add richer CI annotations for GitHub Actions.
+- Add SARIF output format for GitHub security tab.
 - Add documentation examples for large-file workflows.
 
 ## Later

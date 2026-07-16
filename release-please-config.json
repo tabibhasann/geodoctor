@@ -1,0 +1,10 @@
+{
+  "bootstrap-sha": "97b1d833fc819dfc9995fb232c19ad75cccb6de7",
+  "bump-minor-pre-major": true,
+  "packages": {
+    ".": {
+      "release-type": "python",
+      "package-name": "geodoctor"
+    }
+  }
+}
