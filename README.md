@@ -49,6 +49,9 @@ python -m pip install -e .
 # Check a dataset
 geodoctor check data.gpkg
 
+# Or try it with the included sample data
+geodoctor check examples/sample_data/sample.geojson
+
 # Generate a config from your data
 geodoctor init data.gpkg
 
@@ -58,6 +61,37 @@ geodoctor fix data.gpkg -o clean.gpkg
 # List available checks
 geodoctor rules
 ```
+
+<details>
+<summary>CLI output: <code>geodoctor --help</code></summary>
+
+```
+Usage: geodoctor [OPTIONS] COMMAND [ARGS]...
+
+The linter for geospatial data.
+
+╭─ Commands ───────────────────────────────────────────────╮
+│ check    Check a geospatial dataset for issues.          │
+│ fix      Apply auto-fixes to a dataset.                  │
+│ init     Generate a starter geodoctor.yml from a dataset.│
+│ rules    List all available checks.                      │
+│ diff     Compare two datasets by running checks on both. │
+│ version  Show version.                                   │
+╰──────────────────────────────────────────────────────────╯
+```
+
+</details>
+
+<details>
+<summary>CLI output: <code>geodoctor check examples/sample_data/sample.geojson</code></summary>
+
+```
+╭────────────────────────────────────────────── geodoctor ───────────────────────────────────────────────╮
+│ ✓ All checks passed!                                                                                    │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+```
+
+</details>
 
 ## What it checks
 

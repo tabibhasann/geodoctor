@@ -1,0 +1,8 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {"type": "Feature", "properties": {"id": 1, "name": "Dhaka"}, "geometry": {"type": "Point", "coordinates": [90.4125, 23.8103]}},
+    {"type": "Feature", "properties": {"id": 2, "name": "Chittagong"}, "geometry": {"type": "Point", "coordinates": [91.8317, 22.3569]}},
+    {"type": "Feature", "properties": {"id": 3, "name": "Sylhet"}, "geometry": {"type": "Point", "coordinates": [91.8687, 24.8949]}}
+  ]
+}
