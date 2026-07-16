@@ -46,7 +46,7 @@ def check_empty_geometry(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> list
     if config.geometry.allow_empty:
         return []
 
-    empty = gdf[gdf.geometry.apply(lambda g: is_empty(g) if g is not None else True)]
+    empty = gdf[gdf.geometry.apply(lambda g: is_empty(g) if g is not None else False)]
     if len(empty) == 0:
         return []
 

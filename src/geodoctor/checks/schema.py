@@ -147,7 +147,7 @@ def check_regex_mismatch(gdf: gpd.GeoDataFrame, config: GeodoctorConfig) -> list
         bad = gdf.index[
             gdf[field].apply(
                 lambda v, p=pattern: not p.match(str(v))
-                if v is not None and not isinstance(v, float)
+                if v is not None and not (isinstance(v, float) and v != v)
                 else False
             )
         ].tolist()

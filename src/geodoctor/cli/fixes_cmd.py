@@ -37,6 +37,14 @@ def run_fix(
     }
     driver = driver_map.get(ext)
 
+    if driver is None:
+        typer.echo(
+            f"Error: unsupported output format '{ext}'. "
+            f"Supported: {', '.join(sorted(driver_map))}",
+            err=True,
+        )
+        raise typer.Exit(2)
+
     if len(layers) > 1 and driver != "GPKG":
         typer.echo(
             "Error: multi-layer inputs require a GeoPackage output "
