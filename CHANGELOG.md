@@ -3,6 +3,23 @@
 All notable changes to geodoctor are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.3.0](https://github.com/tabibhasann/geodoctor/compare/geodoctor-v0.2.0...geodoctor-v0.3.0) (2026-07-17)
+
+
+### Features
+
+* add error path tests, comparison table, lint fixes ([b696cc2](https://github.com/tabibhasann/geodoctor/commit/b696cc2136a81c3e4c90c5f0c0a92966ef422302))
+
+
+### Bug Fixes
+
+* null geometry check, NaN regex skip, unsupported format error ([6e70077](https://github.com/tabibhasann/geodoctor/commit/6e700775f4435797652ee28a41c2344789906971))
+
+
+### Documentation
+
+* add CLI screenshots, sample data, and README updates ([8079cc7](https://github.com/tabibhasann/geodoctor/commit/8079cc7060f033aef49aee3748e55b0b8863c1f9))
+
 ## [0.2.0] - 2026-06-16
 
 ### Added
