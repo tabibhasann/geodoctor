@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "geodoctor"
-version = "0.2.0"
+version = "0.3.0"
 description = "Linter for geospatial data — find invalid geometries, broken CRS, schema violations, and topology problems"
 readme = "README.md"
 license = {text = "MIT"}
